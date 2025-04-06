@@ -6,5 +6,5 @@ SESSION = os.getenv("SESSION")
 
 PROMO_TEXT = "Please use our new bot: @Ayesha_xtri_2moviebot for latest Movies & Webseries."
 
-DELETE_AFTER = 10  # Seconds after reply delete
+DELETE_AFTER = 40  # Seconds after reply delete
 SAFE_DELAY = 2  # Minimum safe delay for Global Anti Flood
