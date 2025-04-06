@@ -55,17 +55,12 @@ async def auto_reply(client, message: Message):
     await reply.delete()
 
 
-# Optional Commands System
-@app.on_message(filters.command("ping", prefixes=".") & filters.me)
-async def ping(client, message: Message):
-    start = time.time()
-    reply = await message.reply("Pinging...")
-    end = time.time()
-    await reply.edit(f"Pong! `{round((end - start) * 1000)}ms`")
 
-@app.on_message(filters.command("id", prefixes=".") & filters.me)
-async def get_id(client, message: Message):
-    await message.reply(f"Chat ID: `{message.chat.id}`\nYour ID: `{message.from_user.id}`")
+#cmd
+@app.on_message(filters.command("rx", prefixes=["/", "."]) & filters.group)
+async def public_alive(client, message):
+    await message.reply("Baby I am Alive 💖")
+
 
 def run_flask():
     flask_app.run(host="0.0.0.0", port=5000)
