@@ -11,17 +11,17 @@ from config import API_ID, API_HASH, SESSION, PROMO_TEXT, DELETE_AFTER, SAFE_DEL
 app = Client("userbot", api_id=API_ID, api_hash=API_HASH, session_string=SESSION)
 flask_app = Flask(__name__)
 
-recent_users = {}  # User wise reply control
-global_last_reply = 0  # Global reply control
+recent_users = {}  # Per User Delay
+global_last_reply = 0  # Global Delay Control
 
 @flask_app.route("/")
 def home():
     return "UserBot Running Smoothly!"
 
-# Auto Leave If No Send Message Permission
+# Auto Leave If No Permission
 @app.on_chat_member_updated()
 async def check_permissions(_, member):
-    if member.new_chat_member.user.is_self:
+    if member.new_chat_member.user and member.new_chat_member.user.is_self:
         if not member.new_chat_member.can_send_messages:
             await member.chat.leave()
 
@@ -29,38 +29,41 @@ async def check_permissions(_, member):
 async def auto_reply(client, message: Message):
     global global_last_reply
 
-    if message.from_user.is_self:
+    if not message.from_user:  # Skip if from_user is None
+        return
+
+    if message.from_user.is_self:  # Don't reply to self message
         return
 
     user_id = message.from_user.id
     chat_id = message.chat.id
     current_time = time.time()
 
-    # Per User Delay
-    last_reply = recent_users.get(user_id, 0)
-    if current_time - last_reply < 10:  # 10 sec user wise gap
+    # Per User Delay Control
+    last_reply = recent_users.get((chat_id, user_id), 0)
+    if current_time - last_reply < 10:
         return
-    recent_users[user_id] = current_time
+    recent_users[(chat_id, user_id)] = current_time
 
-    # Global Flood Control
+    # Global Delay Control
     if current_time - global_last_reply < SAFE_DELAY:
         await asyncio.sleep(SAFE_DELAY)
+
     global_last_reply = time.time()
 
-    await asyncio.sleep(random.randint(2, 5))  # Small Random Delay
+    await asyncio.sleep(random.randint(2, 5))  # Random small delay
 
-    reply = await message.reply_text(PROMO_TEXT)
+    try:
+        reply = await message.reply_text(PROMO_TEXT)
+        await asyncio.sleep(DELETE_AFTER)
+        await reply.delete()
+    except Exception as e:
+        print(f"Error: {e}")
 
-    await asyncio.sleep(DELETE_AFTER)  # Auto Delete After Time
-    await reply.delete()
-
-
-
-#cmd
+# /rx Command
 @app.on_message(filters.command("rx", prefixes=["/", "."]) & filters.group)
 async def public_alive(client, message):
     await message.reply("Baby I am Alive 💖")
-
 
 def run_flask():
     flask_app.run(host="0.0.0.0", port=5000)
