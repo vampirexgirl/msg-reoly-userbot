@@ -6,6 +6,80 @@ import asyncio
 import random
 import time
 import os
+from config import API_ID, API_HASH, SESSION, PROMO_TEXT, DELETE_AFTER
+
+app = Client("userbot", api_id=API_ID, api_hash=API_HASH, session_string=SESSION)
+flask_app = Flask(__name__)
+
+@flask_app.route("/")
+def home():
+    return "UserBot Running Smoothly!"
+
+# Auto Leave If No Permission
+@app.on_chat_member_updated()
+async def check_permissions(_, member):
+    if member.new_chat_member.user.is_self:
+        if not member.new_chat_member.can_send_messages:
+            await member.chat.leave()
+
+# Auto Reply To All Messages (Fast Mode)
+@app.on_message(filters.group & filters.text)
+async def auto_reply(client, message: Message):
+    if not message.from_user or message.from_user.is_self:
+        return
+
+    try:
+        reply = await message.reply_text(PROMO_TEXT)
+        await asyncio.sleep(DELETE_AFTER)
+        await reply.delete()
+    except Exception as e:
+        print(f"Error: {e}")
+
+# Alive Command
+@app.on_message(filters.command("rx", prefixes=["/", "."]) & filters.group)
+async def public_alive(client, message):
+    await message.reply("Baby I am Alive 💖")
+
+def run_flask():
+    flask_app.run(host="0.0.0.0", port=5000)
+
+if __name__ == "__main__":
+    Thread(target=run_flask).start()
+    app.run()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''from pyrogram import Client, filters
+from pyrogram.types import Message
+from flask import Flask
+from threading import Thread
+import asyncio
+import random
+import time
+import os
 from config import API_ID, API_HASH, SESSION, PROMO_TEXT, DELETE_AFTER, SAFE_DELAY
 
 app = Client("userbot", api_id=API_ID, api_hash=API_HASH, session_string=SESSION)
@@ -63,4 +137,4 @@ def run_flask():
 
 if __name__ == "__main__":
     Thread(target=run_flask).start()
-    app.run()
+    app.run()'''
