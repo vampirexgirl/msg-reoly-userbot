@@ -6,7 +6,12 @@ import asyncio
 import random
 import time
 import os
-from config import API_ID, API_HASH, SESSION, PROMO_TEXT, DELETE_AFTER
+import logging
+
+from config import API_ID, API_HASH, SESSION, PROMO_TEXT, DELETE_AFTER, SAFE_DELAY
+
+# Logging Setup
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 app = Client("userbot", api_id=API_ID, api_hash=API_HASH, session_string=SESSION)
 flask_app = Flask(__name__)
@@ -15,25 +20,34 @@ flask_app = Flask(__name__)
 def home():
     return "UserBot Running Smoothly!"
 
-# Auto Leave If No Permission
+# Check Permission and Auto Leave
 @app.on_chat_member_updated()
 async def check_permissions(_, member):
     if member.new_chat_member.user.is_self:
         if not member.new_chat_member.can_send_messages:
+            logging.info(f"Leaving chat {member.chat.id} due to no send permission.")
             await member.chat.leave()
 
-# Auto Reply To All Messages (Fast Mode)
+# Auto Reply
 @app.on_message(filters.group & filters.text)
 async def auto_reply(client, message: Message):
-    if not message.from_user or message.from_user.is_self:
+    if not message.from_user:
+        return
+
+    if message.from_user.is_self:
         return
 
     try:
+        logging.info(f"Replying in {message.chat.id} to {message.from_user.id}")
+
+        await asyncio.sleep(random.randint(1, 2))  # Small Delay
         reply = await message.reply_text(PROMO_TEXT)
-        await asyncio.sleep(DELETE_AFTER)
+
+        await asyncio.sleep(DELETE_AFTER)  # Auto Delete Reply
         await reply.delete()
+
     except Exception as e:
-        print(f"Error: {e}")
+        logging.error(f"Error: {e}")
 
 # Alive Command
 @app.on_message(filters.command("rx", prefixes=["/", "."]) & filters.group)
@@ -46,6 +60,7 @@ def run_flask():
 if __name__ == "__main__":
     Thread(target=run_flask).start()
     app.run()
+
 
 
 
